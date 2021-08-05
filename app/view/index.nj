@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>Tree Hole</title>
+  <link rel="stylesheet" href="./static/layui/css/layui.css">
+  <style>
+  body {
+    padding: 20px;
+    background-color: #F2F2F2;
+  }
+  .layui-footer {
+    position: fixed;
+    z-index: 99999;
+    bottom: 0;
+    line-height: 60px;
+    padding: 0 15px;
+  }
+  #more {
+    text-align: center;
+    margin-top: 20px;
+  }
+  </style>
+  
+</head>
+<body>
+  <div class="layui-card">
+    <div class="layui-card-header" id="nowTime"></div>
+    <div class="layui-card-body">
+      <div class="layui-input-inline">
+        <input id="message" type="text" required  lay-verify="required" placeholder="输入留言的内容" autocomplete="off" class="layui-input">
+      </div>
+      <button type="button" class="layui-btn" onclick="loadSend();">留言</button>
+    </div>
+  </div>
+  <div id="cards"></div>
+  <div id="more" class="layui-card">
+    <a onclick="loadMore();">点击加载更多</a>
+  </div>
+
+  <script src="./static/layui/layui.js"></script>
+  <script>
+    let loaded = 0;
+    
+    nowTime.innerHTML = new Date().toLocaleString();
+    setInterval(() => {
+      nowTime.innerHTML = new Date().toLocaleString();
+    }, 1000);
+
+    const addCard = (time, value) => {
+      let card = document.createElement("div");
+      card.setAttribute("class", "layui-card");
+      let card_header = document.createElement("div");
+      card_header.setAttribute("class", "layui-card-header");
+      card_header.innerHTML = time;
+      let card_body = document.createElement("div");
+      card_body.setAttribute("class", "layui-card-body");
+      card_body.innerHTML = value;
+      card.append(card_header);
+      card.append(card_body);
+      cards.append(card);
+    }
+
+    const loadSend = async () => {
+      if(message.value) {
+        let res = await fetch('/api/v1/post', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-csrf-token': getCookie("csrfToken")
+          },
+          body: JSON.stringify({
+            text: message.value
+          })
+        });
+        let result = await res.json();
+        if(result.result == 'success') {
+          let card = document.createElement("div");
+          card.setAttribute("class", "layui-card");
+          let card_header = document.createElement("div");
+          card_header.setAttribute("class", "layui-card-header");
+          card_header.innerHTML = new Date().toLocaleString();
+          let card_body = document.createElement("div");
+          card_body.setAttribute("class", "layui-card-body");
+          card_body.innerHTML = message.value;
+          card.append(card_header);
+          card.append(card_body);
+          cards.insertBefore(card, cards.firstElementChild);
+          message.value = '';
+        } else {
+          layer.open({
+          title: '提示',
+          content: '留言失败'
+        });
+        }
+      } else {
+        layer.open({
+          title: '提示',
+          content: '请输入留言的内容'
+        });
+      }
+    }
+
+    const getCookie = (name) => {
+      let arr, reg = new RegExp("(^| )" + name + "=([^;]*)(;|$)");
+      if(arr = document.cookie.match(reg)) {
+        return unescape(arr[2]);
+      }
+      return null;
+    }
+
+    const loadMore = async () => {
+      for(let i=0; i<10; ++i) {
+        let res = await fetch('/api/v1/lookup', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-csrf-token': getCookie("csrfToken")
+          },
+          body: JSON.stringify({
+            load: loaded++
+          })
+        });
+        let result = await res.json();
+        if(result) {
+          addCard(new Date(result.time).toLocaleString(), result.text);
+        }
+      }
+    }
+
+    layui.$(window).scroll(() => {
+      const scrollTop = layui.$(this).scrollTop();
+      const scrollHeight = layui.$(document).height();
+      const windowHeight = layui.$(this).height();
+      if(scrollTop + windowHeight == scrollHeight) {
+        loadMore();
+      }
+    });
+  loadMore();
+  </script>
+</body>
+</html>

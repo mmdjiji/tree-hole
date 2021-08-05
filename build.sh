@@ -1,0 +1,1 @@
+docker build . -t mmdjiji/tree-hole:v1.0
