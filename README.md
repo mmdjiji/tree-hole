@@ -2,6 +2,9 @@
 
 GitHub: https://github.com/mmdjiji/tree-hole
 
+## Preview
+![](assets/preview.jpg)
+
 ## Usage
 ```sh
 sudo docker run -d --name tree-hole -p 8000:8000 mmdjiji/tree-hole:v1.0
